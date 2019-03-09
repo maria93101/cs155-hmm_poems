@@ -318,7 +318,6 @@ class HiddenMarkovModel:
                         for k in range(self.L):
                             temp =  alphas[t + 1][j] * self.A[j][k] * \
                                     self.O[k][x[t + 1]] * betas[t + 2][k]
-                            print (temp)
                             P_yab[t][j][k] = temp
                             norm += temp
                     
