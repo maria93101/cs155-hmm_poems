@@ -22,6 +22,8 @@ import random
 import sys
 import io
 import re
+import string
+
 
 def load_poems(filename):
 
@@ -50,11 +52,14 @@ def load_poems(filename):
                 words[word] = 1
     return lines, words
 
+file = "data/shakespeare.txt"
+lines, words = load_poems(file)
+
 text = ""
 for i in lines:
     text += " ".join(i)+"\n"
 
-    
+
 chars = sorted(list(set(text)))
 print('total chars:', len(chars))
 char_indices = dict((c, i) for i, c in enumerate(chars))
