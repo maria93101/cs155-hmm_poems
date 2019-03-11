@@ -16,7 +16,7 @@ class HiddenMarkovModel:
     def __init__(self, A, O):
         '''
         Initializes an HMM. Assumes the following:
-            - States and observations are integers starting from 0. 
+            - States and observations are integers starting from 0.
             - There is a start state (see notes on A_start below). There
               is no integer associated with the start state, only
               probabilities in the vector A_start.
@@ -34,13 +34,13 @@ class HiddenMarkovModel:
 
         Parameters:
             L:          Number of states.
-            
+
             D:          Number of observations.
-            
+
             A:          The transition matrix.
-            
+
             O:          The observation matrix.
-            
+
             A_start:    Starting transition probabilities. The i^th element
                         is the probability of transitioning from the start
                         state to state i. For simplicity, we assume that
@@ -56,7 +56,7 @@ class HiddenMarkovModel:
 
     def viterbi(self, x):
         '''
-        Uses the Viterbi algorithm to find the max probability state 
+        Uses the Viterbi algorithm to find the max probability state
         sequence corresponding to a given input sequence.
 
         Arguments:
@@ -78,13 +78,13 @@ class HiddenMarkovModel:
         # length 1 ending in state 0.
         probs = [[0. for _ in range(self.L)] for _ in range(M + 1)]
         seqs = [['' for _ in range(self.L)] for _ in range(M + 1)]
-        
-        
-        # Initialize transition probabilities based on the starting 
+
+
+        # Initialize transition probabilities based on the starting
         # transition probablities A_start and the observation matrix O
         for i in range(self.L):
             probs[1][i] = self.A_start[i] * self.O[i][x[0]]
-        
+
         for i in range(1, M): # For each observation
             for j in range(self.L): # For each state
                 max_like = 0
@@ -98,16 +98,16 @@ class HiddenMarkovModel:
                         max_state = l
                 probs[i + 1][j] = max_like
                 seqs[i + 1][j] = max_state
-            
+
         max_el = max(probs[M])
         index = probs[M].index(max_el)
-        
+
         max_seq = str(index)
         # build the output sequence with all the max pointers
         for i in range(M + 1, 1, -1):
             index = int(max_seq[len(max_seq) - 1])
             max_seq += str(seqs[i - 1][index])
-        
+
         return max_seq[::-1]
 
 
@@ -142,16 +142,16 @@ class HiddenMarkovModel:
         # Initialize
         for i in range(self.L):
             alphas[1][i] = self.A_start[i] * self.O[i][x[0]]
-            
+
         for i in range(1, M):
-            for j in range(self.L):  
+            for j in range(self.L):
                 sum = 0
                 for l in range(self.L):
                     sum += alphas[i][l] * self.A[l][j]
                 alphas[i + 1][j] = self.O[j][x[i]] * sum
-        
+
         if (normalize):
-            for i in range(1, M): 
+            for i in range(1, M):
                 sum = 0
                 for a in alphas[i + 1]:
                     sum += a
@@ -191,14 +191,14 @@ class HiddenMarkovModel:
 
         for i in range(self.L):
             betas[M][i] = 1
-            
+
         for i in range(M - 1, -1, -1):
-            for j in range(self.L):  
+            for j in range(self.L):
                 sum = 0
                 for l in range(self.L):
                     sum += betas[i + 1][l] * self.A[j][l] * self.O[l][x[i]]
                 betas[i][j] = sum
-                
+
         if (normalize):
             for i in range(M + 1):
                 norm = 0
@@ -219,12 +219,12 @@ class HiddenMarkovModel:
 
         Arguments:
             X:          A dataset consisting of input sequences in the form
-                        of lists of variable length, consisting of integers 
+                        of lists of variable length, consisting of integers
                         ranging from 0 to D - 1. In other words, a list of
                         lists.
 
             Y:          A dataset consisting of state sequences in the form
-                        of lists of variable length, consisting of integers 
+                        of lists of variable length, consisting of integers
                         ranging from 0 to L - 1. In other words, a list of
                         lists.
 
@@ -232,17 +232,17 @@ class HiddenMarkovModel:
         '''
 
         # Calculate each element of A using the M-step formulas.
-        
+
         # Initialize A
         self.A = [[0 for i in range(self.L)] for j in range(self.L)]
         A_divide = [0 for i in range(self.L)] # for counting
-        
+
         for i in range(len(Y)): # for each sequence
             for j in range(len(Y[i]) - 1): # for each thing in the sequence
                 seq = Y[i]
-                self.A[seq[i]][seq[i + 1]] += 1 
+                self.A[seq[i]][seq[i + 1]] += 1
                 A_divide[seq[i]] += 1
-        
+
         # now divide by count of occurances
         for j in range(self.L):
             for i in range(self.L):
@@ -252,17 +252,17 @@ class HiddenMarkovModel:
 
         self.O = [[0 for i in range(self.D)] for j in range(self.L)]
         O_divide = [0 for i in range(self.L)]
-        
+
         for i in range(len(Y)): # for each sequence
             for j in range(len(Y[i]) - 1): # for each thing in the sequence
-                self.O[Y[i][j]][X[i][j]] += 1 
+                self.O[Y[i][j]][X[i][j]] += 1
                 O_divide[seq[i]] += 1
-        
+
         # now divide by count of occurances
         for j in range(self.L):
             for i in range(self.D):
                 self.O[j][i] = self.O[j][i] / O_divide[j]
-                
+
         return
 
 
@@ -281,38 +281,38 @@ class HiddenMarkovModel:
         '''
 
         # randomly initialize HMM model parameters
-        
+
         for n in range(N_iters):
             print("merp " + str(n))
             P_ya_t = []
             P_yab_t = []
-                
+
             for xi, x in enumerate(X):
                 alphas = self.forward(x, normalize=True)
                 betas = self.backward(x, normalize=True)
-                
+
                 M = len(x)
 
                 P_ya = [[0 for i in range(self.L)] for j in range(M)]
                 P_yab = [[[0 for i in range(self.L)] for i in range(self.L)] for j in range(M)]
-            
+
                 # calculate first marginal
                 for t in range(M):
-                    
-                    norm = 0 
+
+                    norm = 0
                     for k in range(self.L):
                         temp = alphas[t + 1][k] * betas[t + 1][k]
                         P_ya[t][k] = temp
                         norm += temp
-                    
+
                     # now normalize
                     if norm != 0:
                         for l in range(self.L):
                             P_ya[t][l] = P_ya[t][l] / norm
-                
+
                 # calculate second marginal
                 for t in range(M - 1):
-                    
+
                     norm = 0
                     for j in range(self.L):
                         for k in range(self.L):
@@ -320,16 +320,16 @@ class HiddenMarkovModel:
                                     self.O[k][x[t + 1]] * betas[t + 2][k]
                             P_yab[t][j][k] = temp
                             norm += temp
-                    
+
                     # now normalize
                     if norm != 0:
                         for j in range(self.L):
                             for k in range(self.L):
-                                P_yab[t][j][k] = P_yab[t][j][k] / norm 
-                
+                                P_yab[t][j][k] = P_yab[t][j][k] / norm
+
                 P_yab_t.append(P_yab)
                 P_ya_t.append(P_ya)
-                
+
             # Now update the values of A and O
             for i in range(self.L):
                 for j in range(self.L):
@@ -342,7 +342,7 @@ class HiddenMarkovModel:
                             bottom += P_ya_t[x][t][i]
                     if bottom != 0:
                         self.A[i][j] = top / bottom
-            
+
             for i in range(self.L):
                 for j in range(self.D):
                     top = 0
@@ -359,7 +359,7 @@ class HiddenMarkovModel:
     def generate_emission(self, M):
         '''
         Generates an emission of length M, assuming that the starting state
-        is chosen uniformly at random. 
+        is chosen uniformly at random.
 
         Arguments:
             M:          Length of the emission to generate.
@@ -372,12 +372,12 @@ class HiddenMarkovModel:
 
         emission = []
         states = []
-        
+
         # add the starting state
         states.append(random.choice(range(self.L)))
 
         for i in range(M):
-            
+
             rand = random.uniform(0, 1)
             state = 0
             while rand > 0:
@@ -385,19 +385,303 @@ class HiddenMarkovModel:
                 rand = rand - self.A[states[i]][state]
                 state += 1
             states.append(state - 1)
-            
+
             rand = random.uniform(0, 1)
             observation = 0
             while rand > 0:
                 rand = rand - self.O[states[i]][observation]
                 observation += 1
             emission.append(observation - 1)
-            
+
 # #             print(states)
 # #             print (states[1])
 #             #break
 
         return emission, states
+
+    def generate_emission_syllables(self, M, obs_map_r, syllable_dict):
+        '''
+        Generates an emission of length M, assuming that the starting state
+        is chosen uniformly at random.   sjfnvln
+
+        Arguments:
+            M:          Length of the emission (# syllables) to generate (ex. 10).
+
+        Returns:
+            emission:   The randomly generated emission as a list.
+
+            states:     The randomly generated states as a list.
+        '''
+
+        emission = []
+        states = []
+
+
+        # add the starting state
+        states.append(random.choice(range(self.L)))
+
+        i = 0
+        while i < M:
+            # print (i)
+
+            rand = random.uniform(0, 1)
+            state = 0
+            while rand > 0:
+                #  print (state, i)
+                rand = rand - self.A[states[len(emission) - 1]][state]
+                state += 1
+            #states.append(state - 1)
+
+            rand = random.uniform(0, 1)
+            observation = 0
+            while rand > 0:
+                rand = rand - self.O[states[len(emission) - 1]][observation]
+                observation += 1
+            #emission.append(observation - 1)
+
+            f = 0
+            try:
+                if syllable_dict[obs_map_r[observation-1]]:
+                    num_syll = syllable_dict[obs_map_r[observation-1]]
+                    if len(num_syll) == 1:
+                        if int(num_syll[0]) == 1:
+                            i += 1
+                            f = 1
+                        else:
+                            if (i+int(num_syll[0]) > M):
+                                # select something else
+                                pass
+                            else:
+                                i += int(num_syll[0])
+                                f = 1
+                    else: # len(num_syll) > 1:
+                        if 'E' in sorted(num_syll)[1]:
+                            n = int(sorted(num_syll)[1][1:])
+                            if i+n == M:
+                                i += n
+                                f = 1
+                            elif i+int(sorted(num_syll)[0]) < M:
+                                i+= int(sorted(num_syll)[0])
+                                f = 1
+                        else:
+                            if i+int(num_syll[0]) <= M:
+                                i+= int(num_syll[0])
+                                f = 1
+                            elif i+int(num_syll[1]) <= M:
+                                i+= int(num_syll[1])
+                                f = 1
+                            else:
+                                # select something else
+                                pass
+            except KeyError:
+                # sadl
+                # print (obs_map_r[observation-1])
+                pass
+            if (f):
+                emission.append(observation - 1)
+                states.append(state - 1)
+# #             print(states)
+# #             print (states[1])
+#             #break
+
+        return emission, states
+
+    def generate_emission_syllables_other(self, M, obs_map_r, syllable_dict):
+        '''
+        Generates an emission of length M, assuming that the starting state
+        is chosen uniformly at random.   sjfnvln
+
+        Arguments:
+            M:          Length of the emission (# syllables) to generate (ex. 10).
+
+        Returns:
+            emission:   The randomly generated emission as a list.
+
+            states:     The randomly generated states as a list.
+        '''
+
+        emission = []
+        states = []
+
+
+        # emission = x value (0 to D-1)
+        # state = y value (0 to L-1)
+        emission_vals = [d for d in range(self.D)]
+        state_vals = [l for l in range(self.L)]
+
+        # pick a random state
+        state_start = random.randint(0, (self.L-1))
+
+        # do this M times
+        i = 0
+        while i < M:
+            # find state with weighted probabilities
+            # use transmission matrix A and state_start
+            if i == 0:
+                A_probs = self.A[state_start]
+            else:
+                A_probs = self.A[states[len(emission) - 1]]
+            state = random.choices(state_vals, A_probs)
+            states.append(state[0])
+
+            # find emission with weighted probabilities
+            # use observation matrix O and current ? state
+            O_probs = self.O[states[len(emission)]]
+            em = random.choices(emission_vals, O_probs)
+
+            f = 0
+            try:
+                if syllable_dict[obs_map_r[em[0]]]:
+                    num_syll = syllable_dict[obs_map_r[em[0]]]
+                    if len(num_syll) == 1:
+                        if int(num_syll[0]) == 1:
+                            i += 1
+                            f = 1
+                        else:
+                            if (i+int(num_syll[0]) > M):
+                                # select something else
+                                pass
+                            else:
+                                i += int(num_syll[0])
+                                f = 1
+                    else: # len(num_syll) > 1:
+                        if 'E' in sorted(num_syll)[1]:
+                            n = int(sorted(num_syll)[1][1:])
+                            if i+n == M:
+                                i += n
+                                f = 1
+                            elif i+int(sorted(num_syll)[0]) < M:
+                                i+= int(sorted(num_syll)[0])
+                                f = 1
+                        else:
+                            if i+int(num_syll[0]) <= M:
+                                i+= int(num_syll[0])
+                                f = 1
+                            elif i+int(num_syll[1]) <= M:
+                                i+= int(num_syll[1])
+                                f = 1
+                            else:
+                                # select something else
+                                pass
+            except KeyError:
+                # sadl
+                # print (obs_map_r[observation-1])
+                pass
+            if (f):
+                emission.append(em[0])
+                #states.append(state - 1)
+            else:
+                del state[-1]
+
+        return emission, states
+
+    def generate_emission_syllables_correct(self, M, obs_map_r, syllable_dict):
+        '''
+        Generates an emission of length M, assuming that the starting state
+        is chosen uniformly at random.   sjfnvln
+
+        Arguments:
+            M:          Length of the emission (# syllables) to generate (ex. 10).
+
+        Returns:
+            emission:   The randomly generated emission as a list.
+
+            states:     The randomly generated states as a list.
+        '''
+
+        emission = []
+        state = random.choice(range(self.L))
+        states = []
+
+        i = 0
+        while i < M:
+            # Append state.
+            states.append(state)
+
+            # Sample next observation.
+            rand_var = random.uniform(0, 1)
+            next_obs = 0
+
+            while rand_var > 0:
+                rand_var -= self.O[states[len(emission)]][next_obs]
+                next_obs += 1
+
+            next_obs -= 1
+
+            f = 0
+            try:
+                if syllable_dict[obs_map_r[next_obs]]:
+                    num_syll = syllable_dict[obs_map_r[next_obs]]
+                    if len(num_syll) == 1:
+                        if int(num_syll[0]) == 1:
+                            i += 1
+                            f = 1
+                        else:
+                            if (i+int(num_syll[0]) > M):
+                                # select something else
+                                pass
+                            else:
+                                i += int(num_syll[0])
+                                f = 1
+                    else: # len(num_syll) > 1:
+                        if 'E' in sorted(num_syll)[1]:
+                            n = int(sorted(num_syll)[1][1:])
+                            if i+n == M:
+                                i += n
+                                f = 1
+                            elif i+int(sorted(num_syll)[0]) < M:
+                                i+= int(sorted(num_syll)[0])
+                                f = 1
+                        else:
+                            if i+int(num_syll[0]) <= M:
+                                i+= int(num_syll[0])
+                                f = 1
+                            elif i+int(num_syll[1]) <= M:
+                                i+= int(num_syll[1])
+                                f = 1
+                            else:
+                                # select something else
+                                pass
+            except KeyError:
+                # sadl
+                # print (obs_map_r[observation-1])
+                pass
+            if (f):
+                emission.append(next_obs)
+                #states.append(state - 1)
+            else:
+                del states[-1]
+
+            # Sample next state.
+            rand_var = random.uniform(0, 1)
+            next_state = 0
+
+            while rand_var > 0:
+                rand_var -= self.A[states[len(emission)-1]][next_state]
+                next_state += 1
+
+            next_state -= 1
+            state = next_state
+
+        return emission, states
+
+    def generate_emission_syllables_rhymes(self, M, obs_map_r, syllable_dict, rhyme_dict):
+        '''
+        Generates an emission of length M, assuming that the starting state
+        is chosen uniformly at random.
+
+        Arguments:
+            M:          Length of the emission (# syllables) to generate (ex. 10).
+            obs_map_r   Dictionary mapping encoded words (0:D-1) to English
+            syllable_dict Dictionary mapping English words to number of syllables
+            rhyme_dict Dictionary mapping English words to rhyming words
+
+        Returns:
+            emission:   The randomly generated emission as a list.
+
+            states:     The randomly generated states as a list.
+        '''
+        pass
 
     def probability_alphas(self, x):
         '''
@@ -458,11 +742,11 @@ def supervised_HMM(X, Y):
 
     Arguments:
         X:          A dataset consisting of input sequences in the form
-                    of lists of variable length, consisting of integers 
+                    of lists of variable length, consisting of integers
                     ranging from 0 to D - 1. In other words, a list of lists.
 
         Y:          A dataset consisting of state sequences in the form
-                    of lists of variable length, consisting of integers 
+                    of lists of variable length, consisting of integers
                     ranging from 0 to L - 1. In other words, a list of lists.
                     Note that the elements in X line up with those in Y.
     '''
@@ -475,7 +759,7 @@ def supervised_HMM(X, Y):
     states = set()
     for y in Y:
         states |= set(y)
-    
+
     # Compute L and D.
     L = len(states)
     D = len(observations)
@@ -487,7 +771,7 @@ def supervised_HMM(X, Y):
         norm = sum(A[i])
         for j in range(len(A[i])):
             A[i][j] /= norm
-    
+
     # Randomly initialize and normalize matrix O.
     O = [[random.random() for i in range(D)] for j in range(L)]
 
@@ -511,11 +795,11 @@ def unsupervised_HMM(X, n_states, N_iters):
 
     Arguments:
         X:          A dataset consisting of input sequences in the form
-                    of lists of variable length, consisting of integers 
+                    of lists of variable length, consisting of integers
                     ranging from 0 to D - 1. In other words, a list of lists.
 
         n_states:   Number of hidden states to use in training.
-        
+
         N_iters:    The number of iterations to train on.
     '''
 
@@ -523,11 +807,11 @@ def unsupervised_HMM(X, n_states, N_iters):
     observations = set()
     for x in X:
         observations |= set(x)
-    
+
     # Compute L and D.
     L = n_states
     D = len(observations)
-    
+
     random.seed(2019)
 
     # Randomly initialize and normalize matrix A.
@@ -537,7 +821,7 @@ def unsupervised_HMM(X, n_states, N_iters):
         norm = sum(A[i])
         for j in range(len(A[i])):
             A[i][j] /= norm
-    
+
     # Randomly initialize and normalize matrix O.
     O = [[random.random() for i in range(D)] for j in range(L)]
 
