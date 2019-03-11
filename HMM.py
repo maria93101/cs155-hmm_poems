@@ -665,7 +665,72 @@ class HiddenMarkovModel:
 
         return emission, states
 
-    def generate_emission_syllables_rhymes(self, M, obs_map_r, syllable_dict, rhyme_dict):
+    def generate_emission_rhyme(self, M, obs_map_r, rhyme):
+        '''
+        Generates an emission of length M, assuming that the starting state
+        is chosen uniformly at random.
+
+        Arguments:
+            M:          Length of the emission (# syllables) to generate (ex. 10).
+            obs_map_r   Dictionary mapping encoded words (0:D-1) to English
+            rhyme       Word with which to end this emission
+
+        Returns:
+            emission:   The randomly generated emission as a list.
+
+            states:     The randomly generated states as a list.
+        '''
+        emission = []
+        states = []
+
+        print (len(self.O), len(self.O[0]), len(self.A), len(self.A[0]))
+        print (rhyme)
+
+        emission.append(rhyme)
+
+        # Given word, find generating state
+        rand_var = random.uniform(0, 1)
+        curr_state = 0
+
+        while rand_var > 0:
+            # TODO: Fix probabilities
+            # GAHHHH THESE PROBABILITIES DON'T ADD UP TO !
+            # THIS CODE
+            rand_var -= self.O[curr_state][rhyme]
+            curr_state += 1
+
+        curr_state -= 1
+        state = curr_state
+
+        for t in range(M):
+            # Append state.
+            states.append(state)
+
+            # Sample previous state.
+            rand_var = random.uniform(0, 1)
+            prev_state = 0
+
+            while rand_var > 0:
+                rand_var -= self.A[prev_state][state]
+                prev_state += 1
+
+            prev_state -= 1
+            state = prev_state
+
+            # Sample next observation.
+            rand_var = random.uniform(0, 1)
+            next_obs = 0
+
+            while rand_var > 0:
+                rand_var -= self.O[state][next_obs]
+                next_obs += 1
+
+            next_obs -= 1
+            emission.append(next_obs)
+
+        return emission, states
+
+    def generate_emission_syllables_rhymes(self, M, obs_map_r, syllable_dict, rhyme):
         '''
         Generates an emission of length M, assuming that the starting state
         is chosen uniformly at random.
@@ -674,14 +739,135 @@ class HiddenMarkovModel:
             M:          Length of the emission (# syllables) to generate (ex. 10).
             obs_map_r   Dictionary mapping encoded words (0:D-1) to English
             syllable_dict Dictionary mapping English words to number of syllables
-            rhyme_dict Dictionary mapping English words to rhyming words
+            rhyme       Word with which to end this emission
 
         Returns:
             emission:   The randomly generated emission as a list.
 
             states:     The randomly generated states as a list.
         '''
-        pass
+
+        # :) Rewrite everything here probably
+
+        emission = []
+        states = []
+
+        curr_obs = rhyme
+
+        # Append emission
+        emission.append(curr_obs)
+
+        # Sample state that could have generated this emission
+        # Previously going through all observations for states
+        # Now go through all states for obsrvation
+        rand_var = random.uniform(0, 1)
+        curr_state = 0
+
+        while rand_var > 0:
+            rand_var -= self.O[curr_state][emission[len(emission)-1]]
+            curr_state += 1
+
+        curr_state -= 1
+        states.append(curr_state)
+
+        # Sample previous state
+        # This is the thing that would normally be random?
+        # And would then generate an emission
+        rand_var = random.uniform(0, 1)
+        prev_state = 0
+
+        while rand_var > 0:
+            rand_var -= self.A[prev_state][states[len(emission)-1]] # == curr_state
+            prev_state += 1
+
+        prev_state -= 1
+        state = prev_state
+
+        i = 0
+        while i < M:
+            # Append state.
+            states.append(state)
+
+            # Sample previous observation (from previous state calculated above)
+            # Go through all observations for current state
+            rand_var = random.uniform(0, 1)
+            prev_obs = 0
+
+            while rand_var > 0:
+                rand_var -= self.O[state][prev_obs]
+                prev_obs += 1
+
+            prev_obs -= 1
+
+            f = 0
+            try:
+                if syllable_dict[obs_map_r[prev_obs]]:
+                    num_syll = syllable_dict[obs_map_r[prev_obs]]
+                    if len(num_syll) == 1:
+                        if int(num_syll[0]) == 1:
+                            i += 1
+                            f = 1
+                        else:
+                            if (i+int(num_syll[0]) > M):
+                                # select something else
+                                pass
+                            else:
+                                i += int(num_syll[0])
+                                f = 1
+                    else: # len(num_syll) > 1:
+                        if 'E' in sorted(num_syll)[1]:
+                            n = int(sorted(num_syll)[1][1:])
+                            if i+n == M:
+                                i += n
+                                f = 1
+                            elif i+int(sorted(num_syll)[0]) < M:
+                                i+= int(sorted(num_syll)[0])
+                                f = 1
+                        else:
+                            if i+int(num_syll[0]) <= M:
+                                i+= int(num_syll[0])
+                                f = 1
+                            elif i+int(num_syll[1]) <= M:
+                                i+= int(num_syll[1])
+                                f = 1
+                            else:
+                                # select something else
+                                pass
+            except KeyError:
+                # sadl
+                # print (obs_map_r[observation-1])
+                pass
+            if (f):
+                emission.append(prev_obs)
+                #states.append(curr_state)
+            else:
+                del states[-1]
+
+            # Now that we have a current emission and current state (which we formerly called previous)
+            # Sample previous state
+            # Go through all ???
+            rand_var = random.uniform(0, 1)
+            prev_state = 0
+
+            while rand_var > 0:
+                rand_var -= self.A[prev_state][curr_state]
+                prev_state += 1
+
+            prev_state -= 1
+            curr_state = next_state
+
+            # Sample next state.
+            rand_var = random.uniform(0, 1)
+            next_state = 0
+
+            while rand_var > 0:
+                rand_var -= self.A[states[len(emission)-1]][next_state]
+                next_state += 1
+
+            next_state -= 1
+            state = next_state
+
+        return emission, states
 
     def probability_alphas(self, x):
         '''
