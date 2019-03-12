@@ -683,41 +683,38 @@ class HiddenMarkovModel:
         emission = []
         states = []
 
-        print (len(self.O), len(self.O[0]), len(self.A), len(self.A[0]))
-        print (rhyme)
+        # print (len(self.O), len(self.O[0]), len(self.A), len(self.A[0]))
+        # print (rhyme)
 
         emission.append(rhyme)
 
         # Given word, find generating state
-        rand_var = random.uniform(0, 1)
-        curr_state = 0
+        max_prob = 0
+        max_index = -1
 
-        while rand_var > 0:
-            # TODO: Fix probabilities
-            # GAHHHH THESE PROBABILITIES DON'T ADD UP TO !
-            # THIS CODE
-            rand_var -= self.O[curr_state][rhyme]
-            curr_state += 1
+        for i in range(len(self.O)):
+            if max_prob < self.O[i][rhyme]:
+                max_prob = self.O[i][rhyme]
+                max_index = i
 
-        curr_state -= 1
-        state = curr_state
+        state = max_index
 
-        for t in range(M):
+        for t in range(M-1):
             # Append state.
             states.append(state)
 
-            # Sample previous state.
+            # Sample next state.
             rand_var = random.uniform(0, 1)
-            prev_state = 0
+            next_state = 0
 
             while rand_var > 0:
-                rand_var -= self.A[prev_state][state]
-                prev_state += 1
+                rand_var -= self.A[state][next_state]
+                next_state += 1
 
-            prev_state -= 1
-            state = prev_state
+            next_state -= 1
+            state = next_state
 
-            # Sample next observation.
+            # Sample next observation using just-calculated state
             rand_var = random.uniform(0, 1)
             next_obs = 0
 
@@ -727,6 +724,12 @@ class HiddenMarkovModel:
 
             next_obs -= 1
             emission.append(next_obs)
+
+        # manually append last state, wasn't appended
+        # due to the weird way i append things
+        states.append(state)
+
+        # print (len(emission), len(states))
 
         return emission, states
 
@@ -747,62 +750,77 @@ class HiddenMarkovModel:
             states:     The randomly generated states as a list.
         '''
 
-        # :) Rewrite everything here probably
-
         emission = []
         states = []
 
-        curr_obs = rhyme
+        emission.append(rhyme)
 
-        # Append emission
-        emission.append(curr_obs)
+        # Given word, find generating state
+        max_prob = 0
+        max_index = -1
 
-        # Sample state that could have generated this emission
-        # Previously going through all observations for states
-        # Now go through all states for obsrvation
+        for i in range(len(self.O)):
+            if max_prob < self.O[i][rhyme]:
+                max_prob = self.O[i][rhyme]
+                max_index = i
+
+        state = max_index
+        states.append(state)
+
+        # Now, sample next state
+        # This will be equivalent to the starting "randomized" state
+        # in the forward direction scheme of things
+        # then, we will only run the loop n-1 times
+        # basically, both emission and states need to start out w/ same size
+        # Sample next state.
         rand_var = random.uniform(0, 1)
-        curr_state = 0
+        next_state = 0
 
         while rand_var > 0:
-            rand_var -= self.O[curr_state][emission[len(emission)-1]]
-            curr_state += 1
+            rand_var -= self.A[states[len(emission)-1]][next_state] # i.e. states[0] == state
+            next_state += 1
 
-        curr_state -= 1
-        states.append(curr_state)
+        next_state -= 1
+        state = next_state
 
-        # Sample previous state
-        # This is the thing that would normally be random?
-        # And would then generate an emission
-        rand_var = random.uniform(0, 1)
-        prev_state = 0
-
-        while rand_var > 0:
-            rand_var -= self.A[prev_state][states[len(emission)-1]] # == curr_state
-            prev_state += 1
-
-        prev_state -= 1
-        state = prev_state
-
+        # Now everything should be the same???
+        # wait no all the syllables would be reversed?
+        # guess we can check for that later
+        # wouldn't we just remove the ending syllable (E) thing?
+        # OOF
+        # so we gotta check the number of syllables in this first word
+        # and set i accordingly
+        # might as well check for last word case here as well
+        # definitely gotta remove last word case check in the gross loop
+        # but i'll do that later TODO
+        num_syll = syllable_dict[obs_map_r[rhyme]]
         i = 0
+        if len(num_syll) == 1:
+            i = int(num_syll[0])
+        else:
+            if 'E' in sorted(num_syll)[1]:
+                i = int(sorted(num_syll)[1][1:]) # can just directly assign cause it's the first
+            else:
+                i = int(num_syll[0]) # i'm just picking the 1st one for now TODO
+        # M_new = M - i # don't need to subtract from both ends!
         while i < M:
             # Append state.
             states.append(state)
 
-            # Sample previous observation (from previous state calculated above)
-            # Go through all observations for current state
+            # Sample next observation.
             rand_var = random.uniform(0, 1)
-            prev_obs = 0
+            next_obs = 0
 
             while rand_var > 0:
-                rand_var -= self.O[state][prev_obs]
-                prev_obs += 1
+                rand_var -= self.O[states[len(emission)]][next_obs]
+                next_obs += 1
 
-            prev_obs -= 1
+            next_obs -= 1
 
             f = 0
             try:
-                if syllable_dict[obs_map_r[prev_obs]]:
-                    num_syll = syllable_dict[obs_map_r[prev_obs]]
+                if syllable_dict[obs_map_r[next_obs]]:
+                    num_syll = syllable_dict[obs_map_r[next_obs]]
                     if len(num_syll) == 1:
                         if int(num_syll[0]) == 1:
                             i += 1
@@ -828,6 +846,10 @@ class HiddenMarkovModel:
                                 i+= int(num_syll[0])
                                 f = 1
                             elif i+int(num_syll[1]) <= M:
+                                # i'm p sure we'll never get here
+                                # cause we add the shorter one first
+                                # but it's okay
+                                # TODO
                                 i+= int(num_syll[1])
                                 f = 1
                             else:
@@ -838,23 +860,10 @@ class HiddenMarkovModel:
                 # print (obs_map_r[observation-1])
                 pass
             if (f):
-                emission.append(prev_obs)
-                #states.append(curr_state)
+                emission.append(next_obs)
+                #states.append(state - 1)
             else:
                 del states[-1]
-
-            # Now that we have a current emission and current state (which we formerly called previous)
-            # Sample previous state
-            # Go through all ???
-            rand_var = random.uniform(0, 1)
-            prev_state = 0
-
-            while rand_var > 0:
-                rand_var -= self.A[prev_state][curr_state]
-                prev_state += 1
-
-            prev_state -= 1
-            curr_state = next_state
 
             # Sample next state.
             rand_var = random.uniform(0, 1)
