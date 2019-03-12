@@ -51,7 +51,7 @@ def text_to_wordcloud(text, max_words=50, title='', show=True):
 
     return wordcloud
 
-def states_to_wordclouds(hmm, obs_map, max_words=50, show=True):
+def states_to_wordclouds(hmm, obs_map, syllable, max_words=50, show=True):
     # Initialize.
     M = 100000
     n_states = len(hmm.A)
@@ -59,13 +59,17 @@ def states_to_wordclouds(hmm, obs_map, max_words=50, show=True):
     wordclouds = []
 
     # Generate a large emission.
-    emission, states = hmm.generate_emission(M)
+    emission, states = hmm.generate_emission_syllables_correct(M, obs_map_r, syllable)
 
     # For each state, get a list of observations that have been emitted
     # from that state.
     obs_count = []
     for i in range(n_states):
-        obs_lst = np.array(emission)[np.where(np.array(states) == i)[0]]
+#         print (i)
+#         print (len(emission), len(states))
+        ind = np.where(np.array(states) == i)[0]
+#         print (ind)
+        obs_lst = np.array(emission)[ind]
         obs_count.append(obs_lst)
 
     # For each state, convert it into a wordcloud.
