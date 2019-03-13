@@ -1,14 +1,6 @@
 
 
-'''
-#Example script to generate text from Nietzsche's writings.
-At least 20 epochs are required before the generated text
-starts sounding coherent.
-It is recommended to run this script on GPU, as recurrent
-networks are quite computationally intensive.
-If you try this script on new data, make sure your corpus
-has at least ~100k characters. ~1M is better.
-'''
+
 
 from __future__ import print_function
 from keras.callbacks import LambdaCallback
@@ -138,8 +130,7 @@ def on_epoch_end(epoch, _):
 print_callback = LambdaCallback(on_epoch_end=on_epoch_end)
 
 model.fit(x, y,
-          batch_size=128,
-          epochs=100,
-          callbacks=[print_callback])
+          batch_size=32,
+          epochs=500)
 
-model.save('100_batch_rnn_model.h5')
+model.save('500_epoch_1_step_32_batch_rnn_model.h5')
